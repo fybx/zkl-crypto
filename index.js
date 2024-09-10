@@ -7,9 +7,9 @@ import {
 } from "./crypto.js";
 
 let keypair;
+const el_fileInput = document.querySelector("#fileInput");
 
-document
-  .getElementById("fileInput")
+el_fileInput
   .addEventListener("change", function (event) {
     const file = event.target.files[0];
     if (file) {
@@ -23,8 +23,9 @@ document
           return;
         }
 
-        const cipherFile = encryptFile(keypair.pkey, byteArray);
-        console.log(cipherFile);
+        console.log('File to be encrypted:', el_fileInput.files[0].name);
+        const cipherFile = encryptFile(keypair.pkey, el_fileInput.files[0].name, byteArray);
+        console.log('Ciphertext bytes:', cipherFile);
 
         {
           const numPixels = cipherFile.length / 4;
@@ -47,7 +48,9 @@ document
         }
 
         const plainFile = decryptFile(keypair.skey, cipherFile);
-        console.log(plainFile);
+        console.log("Decrypted raw data:", plainFile.data);
+        console.log("Decrypted decoded:", (new TextDecoder()).decode(plainFile.data));
+        console.log("Decrypted file name:", plainFile.fileName);
       };
 
       reader.readAsArrayBuffer(file);

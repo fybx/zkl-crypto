@@ -2,23 +2,37 @@ import init, * as ecies from "ecies-wasm";
 import { Key } from "./zkl-kds/key";
 
 init();
+const td = new TextDecoder();
+const te = new TextEncoder();
+
+const METADATA_LENGTH = 4 + 1020; // [byte length, 255 chars * 4 bytes]
 
 /**
  * Encrypts given data for the recipient
  *
  * @param {Key} publicKey The public key of the recipient
+ * @param {string} fileName Name of the file
  * @param {Uint8Array} data The plaintext data
  * @returns {Uint8Array} The ciphertext data
  * @throws {TypeError} If arguments are of incorrect types
  */
-export function encryptFile(publicKey, data) {
+export function encryptFile(publicKey, fileName, data) {
   if (!(publicKey instanceof Key)) {
     throw new TypeError("publicKey must be an instance of Key");
   }
   if (!(data instanceof Uint8Array)) {
     throw new TypeError("data must be an instance of Uint8Array");
   }
-  return encrypt(publicKey, data);
+  if (!fileName)
+    fileName = "Unknown file";
+
+  const _data = new Uint8Array(METADATA_LENGTH + data.length);
+  const fnBytes = te.encode(fileName);
+  _data.set(int2byteArray(fnBytes.length));
+  _data.set(fnBytes, 4);
+  _data.set(data, METADATA_LENGTH);
+
+  return encrypt(publicKey, _data);
 }
 
 /**
@@ -26,7 +40,7 @@ export function encryptFile(publicKey, data) {
  *
  * @param {Key} privateKey The private key of the recipient
  * @param {Uint8Array} data The ciphertext data
- * @returns {Uint8Array} The plaintext data
+ * @returns {{data: Uint8Array, fileName: string}} The plaintext data
  * @throws {TypeError} If arguments are of incorrect types
  */
 export function decryptFile(privateKey, data) {
@@ -36,7 +50,17 @@ export function decryptFile(privateKey, data) {
   if (!(data instanceof Uint8Array)) {
     throw new TypeError("data must be an instance of Uint8Array");
   }
-  return decrypt(privateKey, data);
+
+  const plaintext = decrypt(privateKey, data);
+  const fnLength = byteArray2int(plaintext.slice(0, 4));
+  const fnBytes = plaintext.slice(4, 4 + fnLength);
+  const fdBytes = plaintext.slice(METADATA_LENGTH, plaintext.length);
+  const fileName = td.decode(fnBytes);
+
+  return { 
+    data: fdBytes,
+    fileName: fileName
+  };
 }
 
 /**
@@ -55,8 +79,7 @@ export function encryptString(publicKey, string) {
     throw new TypeError("string must be of type string");
   }
 
-  const encoder = new TextEncoder();
-  const byteArray = encoder.encode(string);
+  const byteArray = te.encode(string);
   const encryptedData = encrypt(publicKey, byteArray);
   return encryptedData.asHexString();
 }
@@ -84,8 +107,7 @@ export function decryptString(privateKey, string) {
     string.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
   );
   const decryptedData = decrypt(privateKey, byteArray);
-  const decoder = new TextDecoder();
-  return decoder.decode(decryptedData);
+  return td.decode(decryptedData);
 }
 
 function encrypt(publicKey, plaintext) {
@@ -106,6 +128,46 @@ function decrypt(privateKey, ciphertext) {
     throw new TypeError("ciphertext must be an instance of Uint8Array");
   }
   return ecies.decrypt(privateKey.asByteArray, ciphertext);
+}
+
+/**
+ * Converts a 32-bit signed integer into an array of 4 bytes (little-endian).
+ *
+ * @param {number} int - The 32-bit signed integer to convert. Must be in the range of a signed 32-bit integer (-2^31 to 2^31-1).
+ * @returns {number[]} An array of 4 bytes, where the least significant byte is the first element (little-endian).
+ * @example
+ * // Convert 305419896 (0x12345678) to bytes
+ * int2byteArray(305419896); // [120, 86, 52, 18]
+ */
+function int2byteArray(int) {
+  return [
+    int & 0xff ? int & 0xff : 0,
+    (int >> 8) & 0xff ? (int >> 8) & 0xff : 0,
+    (int >> 16) & 0xff ? (int >> 16) & 0xff : 0,
+    (int >> 24) & 0xff ? (int >> 24) & 0xff : 0
+  ]
+}
+
+/**
+ * Converts an array of 4 bytes (little-endian) into a 32-bit signed integer.
+ *
+ * @param {number[]} bytes - An array of 4 bytes where the least significant byte is the first element (little-endian).
+ * @returns {number} The reconstructed 32-bit signed integer.
+ * @example
+ * // Convert [120, 86, 52, 18] back to an integer
+ * byteArray2int([120, 86, 52, 18]); // 305419896 (0x12345678)
+ */
+function byteArray2int(bytes) {
+  return (bytes[0]) |
+         (bytes[1] << 8) |
+         (bytes[2] << 16) |
+         (bytes[3] << 24);
+}
+
+function asByteArray() {
+  return Uint8Array.from(
+    this.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
+  );
 }
 
 function asHexString() {

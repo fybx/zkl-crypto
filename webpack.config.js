@@ -7,7 +7,7 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
   },
   experiments: {
-    asyncWebAssembly: true,
+    syncWebAssembly: true,
   },
   mode: "development",
 };
