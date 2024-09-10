@@ -164,12 +164,6 @@ function byteArray2int(bytes) {
          (bytes[3] << 24);
 }
 
-function asByteArray() {
-  return Uint8Array.from(
-    this.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
-  );
-}
-
 function asHexString() {
   return this.reduce(
     (str, byte) => str + byte.toString(16).padStart(2, "0"),
