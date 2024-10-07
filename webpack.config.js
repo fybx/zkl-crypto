@@ -1,13 +1,17 @@
-const path = require("path");
+import path from "path";
+import { fileURLToPath } from "url";
 
-module.exports = {
-  entry: "./index.js",
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default {
+  entry: "./dist/index.js",
   output: {
-    filename: "bundle.js",
+    filename: "./bundle.js",
     path: path.resolve(__dirname, "dist"),
   },
   experiments: {
     syncWebAssembly: true,
   },
-  mode: "development",
+  mode: "production",
 };

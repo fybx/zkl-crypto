@@ -1,5 +1,5 @@
 import init, * as ecies from "ecies-wasm";
-import { Key } from "./zkl-kds/key";
+import { Key } from "@zklx/kds";
 
 init();
 const td = new TextDecoder();
@@ -23,8 +23,7 @@ export function encryptFile(publicKey, fileName, data) {
   if (!(data instanceof Uint8Array)) {
     throw new TypeError("data must be an instance of Uint8Array");
   }
-  if (!fileName)
-    fileName = "Unknown file";
+  if (!fileName) fileName = "Unknown file";
 
   const _data = new Uint8Array(METADATA_LENGTH + data.length);
   const fnBytes = te.encode(fileName);
@@ -57,9 +56,9 @@ export function decryptFile(privateKey, data) {
   const fdBytes = plaintext.slice(METADATA_LENGTH, plaintext.length);
   const fileName = td.decode(fnBytes);
 
-  return { 
+  return {
     data: fdBytes,
-    fileName: fileName
+    fileName: fileName,
   };
 }
 
@@ -104,7 +103,7 @@ export function decryptString(privateKey, string) {
   }
 
   const byteArray = Uint8Array.from(
-    string.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
+    string.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)),
   );
   const decryptedData = decrypt(privateKey, byteArray);
   return td.decode(decryptedData);
@@ -144,8 +143,8 @@ function int2byteArray(int) {
     int & 0xff ? int & 0xff : 0,
     (int >> 8) & 0xff ? (int >> 8) & 0xff : 0,
     (int >> 16) & 0xff ? (int >> 16) & 0xff : 0,
-    (int >> 24) & 0xff ? (int >> 24) & 0xff : 0
-  ]
+    (int >> 24) & 0xff ? (int >> 24) & 0xff : 0,
+  ];
 }
 
 /**
@@ -158,16 +157,13 @@ function int2byteArray(int) {
  * byteArray2int([120, 86, 52, 18]); // 305419896 (0x12345678)
  */
 function byteArray2int(bytes) {
-  return (bytes[0]) |
-         (bytes[1] << 8) |
-         (bytes[2] << 16) |
-         (bytes[3] << 24);
+  return bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
 }
 
 function asHexString() {
   return this.reduce(
     (str, byte) => str + byte.toString(16).padStart(2, "0"),
-    ""
+    "",
   );
 }
 

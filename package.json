@@ -1,20 +1,22 @@
 {
-  "name": "zkl-crypto",
+  "name": "@zklx/crypto",
   "version": "1.0.0",
-  "description": "",
+  "description": "zk-Lokomotive cryptographic applications provider",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["cryptography", "zero knowledge", "elliptic"],
   "author": "Yigid BALABAN <fyb@fybx.dev>",
   "license": "LGPL-2.0-only",
   "devDependencies": {
-    "babel-loader": "^9.1.3",
-    "webpack": "^5.94.0",
+    "babel-loader": "^9.2.1",
+    "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@zklx/kds": "^1.0.2",
     "ecies-wasm": "^0.2.0"
   }
 }
